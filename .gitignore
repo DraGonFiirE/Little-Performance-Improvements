@@ -1,0 +1,8 @@
+.gradle/
+build/
+run/
+run-data/
+.idea/
+*.iml
+.env
+.env.*

@@ -1,0 +1,56 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="LGPL-3.0-only"
+issueTrackerURL="https://github.com/DraGonFiirE/LittlePerformanceImprovements/issues"
+
+[[mods]]
+    modId="littleperformanceimprovements"
+    version="${mod_version}"
+    displayName="Little Performance Improvements"
+    authors="DraGonFiirE"
+    description='''An addon for LittleTiles that improves overall performance and provides new preview renderers'''
+
+[[dependencies.littleperformanceimprovements]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.littleperformanceimprovements]]
+    modId="minecraft"
+    type="required"
+    versionRange="[1.21.1,1.22)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.littleperformanceimprovements]]
+    modId="creativecore"
+    type="required"
+    versionRange="[2.13.38,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.littleperformanceimprovements]]
+    modId="littletiles"
+    type="required"
+    versionRange="[1.6.0-pre219,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.littleperformanceimprovements]]
+    modId="littleextratiles"
+    type="optional"
+    versionRange="[1.0.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.littleperformanceimprovements]]
+    modId="veil"
+    type="required"
+    versionRange="[4.1.4,)"
+    ordering="AFTER"
+    side="CLIENT"
+
+[[mixins]]
+    config="littleperformanceimprovements.mixins.json"

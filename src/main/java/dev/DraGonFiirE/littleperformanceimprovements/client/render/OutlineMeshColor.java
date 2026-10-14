@@ -1,0 +1,3 @@
+package dev.DraGonFiirE.littleperformanceimprovements.client.render;
+import com.mojang.blaze3d.vertex.*;import dev.DraGonFiirE.littleperformanceimprovements.config.PreviewRendererMode;
+public final class OutlineMeshColor {public static void neutralize(MeshData mesh){if(mesh==null||ToolPreviewMode.current()!=PreviewRendererMode.Outline)return;var state=mesh.drawState();int stride=state.format().getVertexSize();int offset=state.format().getOffset(VertexFormatElement.COLOR);if(offset<0)return;var b=mesh.vertexBuffer();for(int i=0;i<state.vertexCount();i++){int at=i*stride+offset;b.put(at,(byte)255);b.put(at+1,(byte)255);b.put(at+2,(byte)255);}}}

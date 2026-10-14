@@ -1,0 +1,10 @@
+package dev.DraGonFiirE.littleperformanceimprovements.client.render;
+import java.util.*;import team.creative.littletiles.common.math.box.*;import team.creative.littletiles.common.math.box.collection.*;
+/** Same greedy block partitions as the old flattened 3D union, with only 2D storage. */
+public final class FlatWallBlockUnion {
+ public static LittleBoxes build(LittleBoxes raw,int axis,int low,int high){var cached=WallHeightCache.boxes(raw,axis,low,high);if(cached!=null)return WallLayerSplit.split(cached,axis,low,high);int g=raw.grid.count;if(g>64)return null;int u=axis==0?1:0,v=axis==2?1:2;var blocks=new LinkedHashMap<Long,long[]>();
+ for(var b:raw.all())for(int bu=Math.floorDiv(min(b,u),g);bu<=Math.floorDiv(max(b,u)-1,g);bu++)for(int bv=Math.floorDiv(min(b,v),g);bv<=Math.floorDiv(max(b,v)-1,g);bv++){long key=((long)bu<<32)|(bv&0xffffffffL);var rows=blocks.get(key);if(rows==null){rows=new long[g];blocks.put(key,rows);}int lo=Math.max(0,min(b,u)-bu*g),hi=Math.min(g,max(b,u)-bu*g);long mask=(-1L>>>(64-(hi-lo)))<<lo;for(int row=Math.max(0,min(b,v)-bv*g);row<Math.min(g,max(b,v)-bv*g);row++)rows[row]|=mask;}
+ var flat=new LittleBoxesSimple(raw.pos,raw.grid);for(var entry:blocks.entrySet()){int bu=(int)(entry.getKey()>>32),bv=(int)(long)entry.getKey();var rows=entry.getValue();for(int row=0;row<g;row++)while(rows[row]!=0){int lo=Long.numberOfTrailingZeros(rows[row]);int hi=Math.min(g,lo+Long.numberOfTrailingZeros(~(rows[row]>>>lo)));long mask=(-1L>>>(64-(hi-lo)))<<lo;int end=row+1;while(end<g&&(rows[end]&mask)==mask)end++;for(int r=row;r<end;r++)rows[r]&=~mask;int[] b=new int[6];b[u]=bu*g+lo;b[u+3]=bu*g+hi;b[v]=bv*g+row;b[v+3]=bv*g+end;b[axis]=low;b[axis+3]=high;flat.add(new LittleBox(b[0],b[1],b[2],b[3],b[4],b[5]));}}
+ WallHeightCache.rememberBoxes(raw,axis,flat);return WallLayerSplit.split(flat,axis,low,high);}
+ private static int min(LittleBox b,int a){return a==0?b.minX:a==1?b.minY:b.minZ;}private static int max(LittleBox b,int a){return a==0?b.maxX:a==1?b.maxY:b.maxZ;}
+}

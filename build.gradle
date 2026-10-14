@@ -1,0 +1,46 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.148'
+}
+group = 'dev.DraGonFiirE.littleperformanceimprovements'
+version = "${minecraft_version}-${mod_version}"
+base { archivesName = 'littleperformanceimprovements' }
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+}
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.blamejared.com' }
+    maven { url = 'https://api.modrinth.com/maven' }
+}
+neoForge {
+    version = neo_version
+    runs { client { client() }; server { server(); programArgument '--nogui' } }
+    mods { littleperformanceimprovements { sourceSet sourceSets.main } }
+}
+dependencies {
+    implementation 'maven.modrinth:littletiles:GO0Nhohq'
+    implementation 'maven.modrinth:creativecore:vRMtFt35'
+    implementation 'foundry.veil:veil-neoforge-1.21.1:4.1.4'
+    jarJar('foundry.veil:veil-neoforge-1.21.1:[4.1.4,)') { version { prefer '4.1.4' } }
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testImplementation 'com.google.code.gson:gson:2.10.1'
+    testImplementation 'it.unimi.dsi:fastutil:8.5.12'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.compilerArgs.add('-proc:none') }
+tasks.withType(AbstractArchiveTask).configureEach { preserveFileTimestamps = false; reproducibleFileOrder = true }
+test { useJUnitPlatform() }
+
+processResources {
+    inputs.property 'mod_version', project.mod_version
+    filesMatching('META-INF/neoforge.mods.toml') { expand mod_version: project.mod_version }
+}
+jar {
+    from('LICENSE')
+    from('licenses') { into 'licenses' }
+}
+
+sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
+sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath

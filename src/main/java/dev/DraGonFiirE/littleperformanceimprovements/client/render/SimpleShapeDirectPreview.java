@@ -1,0 +1,3 @@
+package dev.DraGonFiirE.littleperformanceimprovements.client.render;
+import net.minecraft.world.item.ItemStack;import team.creative.littletiles.common.placement.shape.LittleShape;import team.creative.littletiles.common.placement.shape.type.*;import dev.DraGonFiirE.littleperformanceimprovements.config.PreviewRendererMode;
+public final class SimpleShapeDirectPreview {public static boolean direct(LittleShape shape,ItemStack stack){var mode=ChiselOnlyPreviewMode.current(stack);return (mode==PreviewRendererMode.Default||mode==PreviewRendererMode.Surface)&&(shape instanceof LittleShapePixel||shape instanceof LittleShapeBlob||shape instanceof LittleShapeCube||shape instanceof LittleShapeTile||shape instanceof LittleShapeType||shape instanceof LittleShapeConnected);}}
