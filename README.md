@@ -9,4 +9,4 @@ An addon for LittleTiles that improves overall performance and provides new prev
 
 # Full Description
 For the full description visit the modpage:  
-- [CurseForge](placeholder)  
+- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/lpi)  
