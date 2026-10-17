@@ -118,7 +118,10 @@ public abstract class LittleToolShaperPerformanceMixin extends LittleTool {
       )
    )
    private PreviewMode littleperformanceimprovements$selectConfiguredPreviewMode(ILittleShaper shaper, Player player, ItemStack stack) {
-      return ChiselOnlyPreviewMode.current(this.stack) == PreviewRendererMode.Default ? shaper.previewMode(player, stack) : ToolPreviewMode.littleTilesMode();
+      // Only chisel previews use LPI's renderer selection. Other shaping tools
+      // retain their native preview modes, while Default ignores previewLines.
+      return stack.getItem() instanceof team.creative.littletiles.common.item.ItemLittleChisel
+         ? ToolPreviewMode.littleTilesMode() : shaper.previewMode(player, stack);
    }
 
    @Inject(method = "removeCache", at = @At("HEAD"))

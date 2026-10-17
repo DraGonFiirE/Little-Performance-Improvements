@@ -231,11 +231,8 @@ public abstract class LittleToolPlacerPerformanceMixin extends LittleTool implem
       )
    )
    private PreviewMode littleperformanceimprovements$useConfiguredPreviewRenderer(PlacementMode mode) {
-      if (littleperformanceimprovements$previewRenderer() == PreviewRendererMode.Default) {
-         return mode.getPreviewMode();
-      } else {
-         return littleperformanceimprovements$previewRenderer() == PreviewRendererMode.Outline ? PreviewMode.LINES : PreviewMode.PREVIEWS;
-      }
+      // LPI's renderer selection replaces LT's legacy previewLines setting.
+      return littleperformanceimprovements$previewRenderer() == PreviewRendererMode.Outline ? PreviewMode.LINES : PreviewMode.PREVIEWS;
    }
 
    @Inject(method = "renderInternal", at = @At("HEAD"), cancellable = true)
