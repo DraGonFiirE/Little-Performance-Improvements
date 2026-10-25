@@ -23,10 +23,14 @@ public final class ShaderPreviewPass {
   if(!checked){checked=true;try{Class<?> api=Class.forName("net.irisshaders.iris.api.v0.IrisApi");iris=api.getMethod("getInstance").invoke(null);enabled=api.getMethod("isShaderPackInUse");shadow=api.getMethod("isRenderingShadowPass");}catch(ReflectiveOperationException|LinkageError e){iris=null;}}
   if(iris==null)return false;try{return (boolean)enabled.invoke(iris);}catch(ReflectiveOperationException e){return false;}
  }
- public static void beginFrame(){pending.clear();}
+ public static void beginFrame(){pending.clear();EditingPreviewDepth.beginFrame();}
  public static void render(LittleTool tool,PreviewRenderer renderer,PoseStack pose,Vec3 camera,boolean highlight){
-  if(flushing||!shaders()){PreviewDepthPriority.render(tool,renderer,pose,camera,highlight);return;}
-  try{if((boolean)shadow.invoke(iris))return;}catch(ReflectiveOperationException ignored){}
+  boolean shaderPack=shaders();
+  boolean editing=EditingOutlinePreview.uses(tool.stack);
+  if(flushing||(!shaderPack&&!editing)){PreviewDepthPriority.render(tool,renderer,pose,camera,highlight);return;}
+  if(shaderPack)try{if((boolean)shadow.invoke(iris))return;}catch(ReflectiveOperationException ignored){}
+  // The highlight callback runs after block entities, before translucent terrain.
+  if(editing&&highlight)EditingPreviewDepth.capture();
   PoseStack copy=new PoseStack();copy.last().pose().set(pose.last().pose());copy.last().normal().set(pose.last().normal());
   // One draw per tool/pass; shadow or repeated stage events cannot accumulate work.
   pending.removeIf(draw->draw.tool==tool&&draw.highlight==highlight);
@@ -39,6 +43,7 @@ public final class ShaderPreviewPass {
   try(var state=new PreviewPassState()){
    flushing=true;com.mojang.blaze3d.vertex.BufferUploader.invalidate();mc.getMainRenderTarget().bindWrite(true);
    RenderSystem.enableDepthTest();RenderSystem.depthFunc(GL33C.GL_LEQUAL);RenderSystem.enableBlend();RenderSystem.defaultBlendFunc();
+   if(EditingOutlinePreview.active())EditingPreviewDepth.bindForOverlay();
    for(var draw:draws){if(draw.tool!=LittleTilesClient.PREVIEW_RENDERER.tool())continue;
     RenderSystem.setProjectionMatrix(draw.projection,draw.sorting);RenderSystem.getModelViewStack().set(draw.view);RenderSystem.applyModelViewMatrix();
     PreviewDepthPriority.render(draw.tool,draw.renderer,draw.pose,draw.camera,draw.highlight);
