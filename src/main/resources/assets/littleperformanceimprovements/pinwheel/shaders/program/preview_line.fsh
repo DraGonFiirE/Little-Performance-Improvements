@@ -1,6 +1,8 @@
 in vec4 lineColor;
 in vec3 lineLocalPosition;
 noperspective in vec3 centerNdc;
+noperspective in float lineDistance;
+uniform int HammerStyle;
 uniform vec4 ColorModulator;
 uniform usampler2D OutlineSurface;
 uniform samplerBuffer OutlineVertices;
@@ -68,6 +70,11 @@ vec4 planeFor(uint encoded){
  return vec4(n,dot(n,a));
 }
 void main(){
+ if(HammerStyle!=0){
+  if(HammerStyle==2&&mod(lineDistance,12.0)>=6.0)discard;
+  fragColor=lineColor*ColorModulator;
+  return;
+ }
  ivec2 size=textureSize(OutlineSurface,0);
  vec2 pixel=(centerNdc.xy*0.5+0.5)*vec2(size)-0.5;
  ivec2 base=ivec2(floor(pixel));uint ids[4];

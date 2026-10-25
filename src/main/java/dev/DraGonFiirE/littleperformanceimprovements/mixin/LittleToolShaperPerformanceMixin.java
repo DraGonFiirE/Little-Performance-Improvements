@@ -7,6 +7,7 @@ import dev.DraGonFiirE.littleperformanceimprovements.client.render.ChiselOnlyPre
 import dev.DraGonFiirE.littleperformanceimprovements.client.render.ChiselTexturePlaceholder;
 import dev.DraGonFiirE.littleperformanceimprovements.client.render.DefaultInitialPreview;
 import dev.DraGonFiirE.littleperformanceimprovements.client.render.DefaultWhileDragging;
+import dev.DraGonFiirE.littleperformanceimprovements.client.render.HammerPreview;
 import dev.DraGonFiirE.littleperformanceimprovements.client.render.PreviewShapeGeometry;
 import dev.DraGonFiirE.littleperformanceimprovements.client.render.SpherePreviewBoxes;
 import dev.DraGonFiirE.littleperformanceimprovements.client.render.SurfaceDragThreshold;
@@ -47,7 +48,7 @@ import team.creative.littletiles.client.tool.LittleTool;
 import team.creative.littletiles.client.tool.shaper.LittleToolShaper;
 import team.creative.littletiles.client.tool.shaper.ShapeSelection;
 import team.creative.littletiles.common.grid.LittleGrid;
-import team.creative.littletiles.common.item.ItemLittleHammer;
+import dev.DraGonFiirE.littleperformanceimprovements.client.render.EditingOutlinePreview;
 import team.creative.littletiles.common.level.context.ILittleLevelContext;
 import team.creative.littletiles.common.math.box.collection.LittleBoxes;
 import team.creative.littletiles.common.math.box.collection.LittleBoxesSimple;
@@ -103,7 +104,7 @@ public abstract class LittleToolShaperPerformanceMixin extends LittleTool {
 
    @Inject(method = "tickInternal", at = @At("HEAD"))
    private void littleperformanceimprovements$invalidatePreviewCache(PreviewRenderer renderer, CallbackInfo callback) {
-      String key = ShapePreviewTransform.cacheKey(this.stack) + "|preview=" + ChiselOnlyPreviewMode.current(this.stack).name();
+      String key = EditingOutlinePreview.cacheKey(ShapePreviewTransform.cacheKey(this.stack) + "|preview=" + ChiselOnlyPreviewMode.current(this.stack).name(), this.stack);
       if (!key.equals(this.littleperformanceimprovements$previewCacheKey)) {
          this.littleperformanceimprovements$previewCacheKey = key;
          this.removeCache();
@@ -118,8 +119,9 @@ public abstract class LittleToolShaperPerformanceMixin extends LittleTool {
       )
    )
    private PreviewMode littleperformanceimprovements$selectConfiguredPreviewMode(ILittleShaper shaper, Player player, ItemStack stack) {
-      // Only chisel previews use LPI's renderer selection. Other shaping tools
-      // retain their native preview modes, while Default ignores previewLines.
+      // Editing operations use see-through outlines; other chisel operations
+      // use the selected renderer independently of LT's legacy previewLines.
+      if (EditingOutlinePreview.uses(stack)) return PreviewMode.LINES;
       return stack.getItem() instanceof team.creative.littletiles.common.item.ItemLittleChisel
          ? ToolPreviewMode.littleTilesMode() : shaper.previewMode(player, stack);
    }
@@ -161,6 +163,14 @@ public abstract class LittleToolShaperPerformanceMixin extends LittleTool {
    ) {
       ItemStack stack = this.stack.copy();
       ShapeSelection selection = this.builtSelection;
+      if (EditingOutlinePreview.uses(stack) && !HammerPreview.needsDetail(shape)) {
+         try {
+            return CompletableFuture.completedFuture(
+               dev.DraGonFiirE.littleperformanceimprovements.client.render.HammerPreview.build(shape, selection, config, stack, renderer));
+         } catch (Throwable error) {
+            return CompletableFuture.failedFuture(error);
+         }
+      }
       long generation = this.littleperformanceimprovements$previewGeneration;
       if (!(TextureDragShapes.defer(shape, stack) & SurfaceDragThreshold.large(selection, stack))) {
          try {
@@ -233,7 +243,7 @@ public abstract class LittleToolShaperPerformanceMixin extends LittleTool {
 
    @Unique
    private static boolean littleperformanceimprovements$usesExactBoundaryOutline(ItemStack stack, LittleShape shape) {
-      return littleperformanceimprovements$usesBoundaryOutline(shape) || stack.getItem() instanceof ItemLittleHammer && shape == ShapeRegistry.DRAG_BOX;
+      return littleperformanceimprovements$usesBoundaryOutline(shape) || EditingOutlinePreview.uses(stack) && shape == ShapeRegistry.DRAG_BOX;
    }
 
    @Unique
@@ -246,6 +256,10 @@ public abstract class LittleToolShaperPerformanceMixin extends LittleTool {
    private static BoxRenderResult littleperformanceimprovements$buildPreviewMesh(
       PreviewRenderer renderer, LittleBoxes boxes, ItemStack stack, boolean lines, LittleShape shape, ShapeSelection selection, LittleShapeConfig config
    ) {
+      if (EditingOutlinePreview.uses(stack)) {
+         // Detailed geometry still uses the inexpensive lines-only renderer.
+         return HammerPreview.mesh(renderer, PreviewRenderer.EMPTY, boxes);
+      }
       if (ChiselOnlyPreviewMode.current(stack) != PreviewRendererMode.Default && lines && littleperformanceimprovements$usesExactBoundaryOutline(stack, shape)) {
          LittleBoxes display = boxes;
          if (shape instanceof LittleShapeSphere && config instanceof HollowThicknessConfig sphereConfig) {
@@ -270,6 +284,9 @@ public abstract class LittleToolShaperPerformanceMixin extends LittleTool {
    private BoxRenderResult littleperformanceimprovements$useBoundaryLinesForTemporaryResult(
       PreviewRenderer renderer, PoseStack pose, LittleBoxes boxes, boolean lines
    ) {
+      if (EditingOutlinePreview.uses(this.stack)) {
+         return dev.DraGonFiirE.littleperformanceimprovements.client.render.HammerPreview.mesh(renderer, pose, boxes);
+      }
       if (ChiselOnlyPreviewMode.current(this.stack) != PreviewRendererMode.Default
          && lines
          && littleperformanceimprovements$usesExactBoundaryOutline(this.stack, this.builtShape)) {
@@ -341,7 +358,8 @@ public abstract class LittleToolShaperPerformanceMixin extends LittleTool {
       )
    )
    private LittleBoxes littleperformanceimprovements$rebuildExactSphereForPlacement(BoxRenderResult preview) {
-      if (this.builtShape instanceof LittleShapeSphere && this.builtSelection != null && this.builtShapeConfig != null) {
+      if ((EditingOutlinePreview.uses(this.stack) || this.builtShape instanceof LittleShapeSphere)
+         && this.builtSelection != null && this.builtShapeConfig != null) {
          LittleBoxes exact = this.builtShape.build(this.builtSelection, this.builtShapeConfig);
          return ShapePreviewTransform.apply(this.stack, this.builtSelection, exact, this.builtLines, "placement");
       } else {

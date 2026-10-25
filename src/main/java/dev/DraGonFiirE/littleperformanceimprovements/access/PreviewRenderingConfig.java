@@ -3,9 +3,10 @@ import dev.DraGonFiirE.littleperformanceimprovements.config.PreviewRendererMode;
 import team.creative.creativecore.common.util.type.Color;
 public interface PreviewRenderingConfig {
  PreviewRendererMode littleperformanceimprovements$getBlueprintRenderer();
- PreviewRendererMode littleperformanceimprovements$getShapeRenderer();
+ PreviewRendererMode littleperformanceimprovements$getChiselRenderer();
  Color littleperformanceimprovements$getBlueprintColor();
- Color littleperformanceimprovements$getShapeColor();
+ Color littleperformanceimprovements$getChiselColor();
+ Color littleperformanceimprovements$getHammerColor();
  /** Settings for the active preview tool, shared by its render and build paths. */
  PreviewRendererMode littleperformanceimprovements$getPreviewRenderer();
  Color littleperformanceimprovements$getPreviewColor();

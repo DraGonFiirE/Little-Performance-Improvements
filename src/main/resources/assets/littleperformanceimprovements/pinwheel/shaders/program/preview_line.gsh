@@ -6,11 +6,12 @@ in vec3 vertexLocalPosition[];
 out vec3 lineLocalPosition;
 out vec4 lineColor;
 noperspective out vec3 centerNdc;
+noperspective out float lineDistance;
 
 uniform vec2 ScreenSize;
 uniform float LineWidth;
 
-void emitLineVertex(vec4 clipPosition, vec2 offset, vec4 color, vec3 viewPosition) {
+void emitLineVertex(vec4 clipPosition, vec2 offset, vec4 color, vec3 viewPosition, float distanceAlong) {
     vec2 ndc = clipPosition.xy / clipPosition.w;
     gl_Position = vec4((ndc + offset) * clipPosition.w,
                        clipPosition.z,
@@ -18,6 +19,7 @@ void emitLineVertex(vec4 clipPosition, vec2 offset, vec4 color, vec3 viewPositio
     centerNdc = clipPosition.xyz / clipPosition.w;
     lineLocalPosition = viewPosition;
     lineColor = color;
+    lineDistance = distanceAlong;
     EmitVertex();
 }
 
@@ -58,9 +60,10 @@ void main() {
     // finished strip matches native OpenGL's configured line width.
     vec2 offset = perpendicular * LineWidth / ScreenSize;
 
-    emitLineVertex(start, offset, vertexColor[0],startView);
-    emitLineVertex(start, -offset, vertexColor[0],startView);
-    emitLineVertex(end, offset, vertexColor[1],endView);
-    emitLineVertex(end, -offset, vertexColor[1],endView);
+    // Screen-space lengths keep the dash spacing readable at any distance.
+    emitLineVertex(start, offset, vertexColor[0],startView,0.0);
+    emitLineVertex(start, -offset, vertexColor[0],startView,0.0);
+    emitLineVertex(end, offset, vertexColor[1],endView,directionLength*0.5);
+    emitLineVertex(end, -offset, vertexColor[1],endView,directionLength*0.5);
     EndPrimitive();
 }

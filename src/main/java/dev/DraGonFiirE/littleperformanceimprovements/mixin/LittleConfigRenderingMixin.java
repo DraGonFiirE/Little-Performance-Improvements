@@ -19,11 +19,13 @@ public abstract class LittleConfigRenderingMixin implements PreviewRenderingConf
    @CreativeConfig
    public PreviewRendererMode blueprintRenderer = PreviewRendererMode.Surface;
    @CreativeConfig
-   public PreviewRendererMode shapeRenderer = PreviewRendererMode.Surface;
+   public PreviewRendererMode chiselRenderer = PreviewRendererMode.Surface;
    @CreativeConfig
    public Color blueprintColor = new Color(255, 255, 255, 255);
    @CreativeConfig
-   public Color shapeColor = new Color(255, 255, 255, 255);
+   public Color chiselColor = new Color(255, 255, 255, 255);
+   @CreativeConfig
+   public Color hammerColor = new Color(255, 255, 255, 255);
    @CreativeConfig
    @DecimalRange(slider = false, min = 0.25, max = 16.0)
    public double previewOutlineThickness = 2.0;
@@ -44,12 +46,12 @@ public abstract class LittleConfigRenderingMixin implements PreviewRenderingConf
 
    @Override
    public PreviewRendererMode littleperformanceimprovements$getPreviewRenderer() {
-      return PreviewConfigSelection.isShape() ? this.shapeRenderer : this.blueprintRenderer;
+      return dev.DraGonFiirE.littleperformanceimprovements.client.render.EditingOutlinePreview.active() ? PreviewRendererMode.Outline : PreviewConfigSelection.isShape() ? this.chiselRenderer : this.blueprintRenderer;
    }
 
    @Override
    public Color littleperformanceimprovements$getPreviewColor() {
-      return PreviewConfigSelection.isShape() ? this.shapeColor : this.blueprintColor;
+      return PreviewConfigSelection.isHammer() ? this.hammerColor : PreviewConfigSelection.isShape() ? this.chiselColor : this.blueprintColor;
    }
 
    @Override
@@ -58,8 +60,8 @@ public abstract class LittleConfigRenderingMixin implements PreviewRenderingConf
    }
 
    @Override
-   public PreviewRendererMode littleperformanceimprovements$getShapeRenderer() {
-      return this.shapeRenderer;
+   public PreviewRendererMode littleperformanceimprovements$getChiselRenderer() {
+      return this.chiselRenderer;
    }
 
    @Override
@@ -68,8 +70,13 @@ public abstract class LittleConfigRenderingMixin implements PreviewRenderingConf
    }
 
    @Override
-   public Color littleperformanceimprovements$getShapeColor() {
-      return this.shapeColor;
+   public Color littleperformanceimprovements$getChiselColor() {
+      return this.chiselColor;
+   }
+
+   @Override
+   public Color littleperformanceimprovements$getHammerColor() {
+      return this.hammerColor;
    }
 
    @Override

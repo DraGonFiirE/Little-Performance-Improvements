@@ -21,6 +21,7 @@ public final class ChiselOutlineDepth {
  private static VertexBuffer surfaceBuffer,lineBuffer;
  private static WeakReference<MeshData> uploaded=new WeakReference<>(null);
  public static PreviewRenderer.BoxRenderResult register(PreviewRenderer.BoxRenderResult result,PreviewRenderer renderer,LittleBoxes geometry){
+  if(EditingOutlinePreview.active())return LinesOnlyOutlineDrag.mark(result);
   if(result==null||result.data()==null||LinesOnlyOutlineDrag.contains(result.data())||ToolPreviewMode.current()!=PreviewRendererMode.Outline)return result;
   synchronized(surfaces){if(surfaces.containsKey(new Key(result.data())))return result;}
   var mode=result.data().drawState().mode();if(mode!=VertexFormat.Mode.LINES&&mode!=VertexFormat.Mode.DEBUG_LINES)return result;
@@ -54,7 +55,22 @@ public final class ChiselOutlineDepth {
     else if(!OutlineLineDepthTexture.captureSurface(surfaceBuffer)){surfaceBuffer.bind();surfaceBuffer.drawWithShader(RenderSystem.getModelViewMatrix(),RenderSystem.getProjectionMatrix(),GameRenderer.getPositionColorShader());}
     GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);RenderSystem.colorMask(mask.get(0)!=0,mask.get(1)!=0,mask.get(2)!=0,mask.get(3)!=0);RenderSystem.depthMask(false);RenderSystem.enableBlend();RenderSystem.defaultBlendFunc();RenderSystem.disableCull();
     var config=(PreviewRenderingConfig)(Object)LittleTiles.CONFIG.rendering;int rgb=OutlinePreviewColor.rgb();float r=((rgb>>16)&255)/255f,g=((rgb>>8)&255)/255f,b=(rgb&255)/255f,a=(float)config.littleperformanceimprovements$getPreviewOutlineAlpha();
-    visibleLines.bind();if(!VeilPreviewLineRenderer.draw(visibleLines,Math.max(1,(float)config.littleperformanceimprovements$getPreviewOutlineThickness()),r,g,b,a)){RenderSystem.setShaderColor(r,g,b,a);visibleLines.drawWithShader(RenderSystem.getModelViewMatrix(),RenderSystem.getProjectionMatrix(),GameRenderer.getPositionColorShader());}
+    float lineWidth=Math.max(1,(float)config.littleperformanceimprovements$getPreviewOutlineThickness());
+    visibleLines.bind();
+    if(EditingOutlinePreview.active()){
+     // Complementary tests against world depth: neither pass writes depth,
+     // so the preview never hides its own rear edges.
+     RenderSystem.depthFunc(GL11.GL_GREATER);
+     VeilPreviewLineRenderer.drawHammer(visibleLines,lineWidth,r,g,b,a*0.25F,true);
+     RenderSystem.depthFunc(GL11.GL_LEQUAL);
+     if(!VeilPreviewLineRenderer.drawHammer(visibleLines,lineWidth,r,g,b,a,false)){
+      RenderSystem.setShaderColor(r,g,b,a);
+      visibleLines.drawWithShader(RenderSystem.getModelViewMatrix(),RenderSystem.getProjectionMatrix(),GameRenderer.getPositionColorShader());
+     }
+    }else if(!VeilPreviewLineRenderer.draw(visibleLines,lineWidth,r,g,b,a)){
+     RenderSystem.setShaderColor(r,g,b,a);
+     visibleLines.drawWithShader(RenderSystem.getModelViewMatrix(),RenderSystem.getProjectionMatrix(),GameRenderer.getPositionColorShader());
+    }
    }finally{VertexBuffer.unbind();RenderSystem.colorMask(mask.get(0)!=0,mask.get(1)!=0,mask.get(2)!=0,mask.get(3)!=0);RenderSystem.depthMask(oldWrite);RenderSystem.depthFunc(oldFunc);if(oldCull)RenderSystem.enableCull();else RenderSystem.disableCull();if(oldDepth)RenderSystem.enableDepthTest();else RenderSystem.disableDepthTest();if(oldBlend)RenderSystem.enableBlend();else RenderSystem.disableBlend();GL11.glPolygonOffset(factor,units);if(oldOffset)GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);else GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);RenderSystem.lineWidth(width);RenderSystem.setShaderColor(color[0],color[1],color[2],color[3]);}
   }finally{matrix.popMatrix();RenderSystem.applyModelViewMatrix();}
   return true;

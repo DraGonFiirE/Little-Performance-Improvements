@@ -6,11 +6,11 @@ class PreviewDefaultsTest {
  @Test void screenshotDefaults() {
   var config = new LittleConfigRenderingMixin() {};
   assertEquals(PreviewRendererMode.Surface, config.blueprintRenderer);
-  assertEquals(PreviewRendererMode.Surface, config.shapeRenderer);
+  assertEquals(PreviewRendererMode.Surface, config.chiselRenderer);
   assertEquals(2.0, config.previewOutlineThickness);
   assertEquals(1.0, config.previewOutlineAlpha);
   assertEquals(0.5, config.previewSurfaceAlpha);
   assertEquals(1.0, config.previewTextureAlpha);
-  assertNotSame(config.blueprintColor, config.shapeColor);
+  assertNotSame(config.blueprintColor, config.chiselColor);
  }
 }

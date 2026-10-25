@@ -16,6 +16,15 @@ public final class VeilPreviewLineRenderer {
    }
 
    public static boolean draw(VertexBuffer var0, float var1, float var2, float var3, float var4, float var5) {
+      return draw(var0, var1, var2, var3, var4, var5, 0);
+   }
+
+   /** Hammer visibility is tested against world depth, not a preview surface. */
+   public static boolean drawHammer(VertexBuffer buffer, float width, float r, float g, float b, float alpha, boolean covered) {
+      return draw(buffer, width, r, g, b, alpha, covered ? 2 : 1);
+   }
+
+   private static boolean draw(VertexBuffer var0, float var1, float var2, float var3, float var4, float var5, int hammerStyle) {
       var2 = OutlinePreviewColor.channel(0, var2);
       var3 = OutlinePreviewColor.channel(1, var3);
       var4 = OutlinePreviewColor.channel(2, var4);
@@ -25,6 +34,8 @@ public final class VeilPreviewLineRenderer {
          var6.getUniformSafe("LineWidth").setFloat(var1);
          var6.getUniformSafe("ColorModulator").setVector(var2, var3, var4, var5);
          var6.bind();
+         // Set on every draw so hammer styling cannot leak into other tools.
+         GL33C.glUniform1i(GL33C.glGetUniformLocation(var6.getProgram(), "HammerStyle"), hammerStyle);
 
          try (OutlineSurfaceTarget.Binding var7 = OutlineLineDepthTexture.capture()) {
             GL33C.glUniform1i(GL33C.glGetUniformLocation(var6.getProgram(), "OutlineSurface"), 0);

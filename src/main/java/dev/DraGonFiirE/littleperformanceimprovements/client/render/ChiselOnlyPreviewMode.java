@@ -9,6 +9,7 @@ import team.creative.littletiles.client.render.overlay.PreviewRenderer;
 import team.creative.littletiles.common.level.context.ILittleLevelContext;
 public final class ChiselOnlyPreviewMode {
  public static PreviewRendererMode current(ItemStack stack) {
+  if(EditingOutlinePreview.uses(stack))return PreviewRendererMode.Outline;
   return stack.getItem() instanceof ItemLittleChisel ? ToolPreviewMode.current() : PreviewRendererMode.Default;
  }
  public static void draw(PreviewRenderer renderer, ILittleLevelContext context, Vec3 camera, BlockPos pos, boolean lines, MeshData mesh, Runnable setup, ItemStack stack) {

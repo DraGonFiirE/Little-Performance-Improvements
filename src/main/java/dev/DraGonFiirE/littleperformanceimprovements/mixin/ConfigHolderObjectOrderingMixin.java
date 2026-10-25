@@ -40,8 +40,9 @@ public abstract class ConfigHolderObjectOrderingMixin {
       String[] names = {
             "blueprintRenderer",
             "blueprintColor",
-            "shapeRenderer",
-            "shapeColor",
+            "chiselRenderer",
+            "chiselColor",
+            "hammerColor",
             "previewOutlineThickness",
             "previewOutlineAlpha",
             "previewSurfaceAlpha",
