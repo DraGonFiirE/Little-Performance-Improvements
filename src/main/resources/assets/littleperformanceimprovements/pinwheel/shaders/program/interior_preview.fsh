@@ -13,7 +13,10 @@ out vec4 fragColor;
 
 void main() {
     float sceneDepth = texelFetch(SceneDepth, ivec2(gl_FragCoord.xy), 0).r;
-    if (gl_FragCoord.z > sceneDepth + 0.0000001) {
+    // Match the slope-scaled raster depth bias when checking world depth
+    // manually. A fixed epsilon alone fails on grazing-angle surfaces.
+    float slope = max(abs(dFdx(gl_FragCoord.z)), abs(dFdy(gl_FragCoord.z)));
+    if (gl_FragCoord.z - slope > sceneDepth + 0.0000001) {
         discard;
     }
     // OpenGL view space looks down -Z. Removing only the shallow view-depth

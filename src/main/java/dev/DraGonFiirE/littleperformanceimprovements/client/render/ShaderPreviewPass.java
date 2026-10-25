@@ -25,7 +25,7 @@ public final class ShaderPreviewPass {
  }
  public static void beginFrame(){pending.clear();}
  public static void render(LittleTool tool,PreviewRenderer renderer,PoseStack pose,Vec3 camera,boolean highlight){
-  if(flushing||!shaders()){tool.render(renderer,pose,camera,highlight);return;}
+  if(flushing||!shaders()){PreviewDepthPriority.render(tool,renderer,pose,camera,highlight);return;}
   try{if((boolean)shadow.invoke(iris))return;}catch(ReflectiveOperationException ignored){}
   PoseStack copy=new PoseStack();copy.last().pose().set(pose.last().pose());copy.last().normal().set(pose.last().normal());
   // One draw per tool/pass; shadow or repeated stage events cannot accumulate work.
@@ -41,7 +41,7 @@ public final class ShaderPreviewPass {
    RenderSystem.enableDepthTest();RenderSystem.depthFunc(GL33C.GL_LEQUAL);RenderSystem.enableBlend();RenderSystem.defaultBlendFunc();
    for(var draw:draws){if(draw.tool!=LittleTilesClient.PREVIEW_RENDERER.tool())continue;
     RenderSystem.setProjectionMatrix(draw.projection,draw.sorting);RenderSystem.getModelViewStack().set(draw.view);RenderSystem.applyModelViewMatrix();
-    draw.tool.render(draw.renderer,draw.pose,draw.camera,draw.highlight);
+    PreviewDepthPriority.render(draw.tool,draw.renderer,draw.pose,draw.camera,draw.highlight);
    }
   }finally{com.mojang.blaze3d.vertex.BufferUploader.invalidate();flushing=false;}
  }

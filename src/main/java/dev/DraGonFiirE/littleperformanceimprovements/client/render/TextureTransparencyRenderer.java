@@ -91,6 +91,7 @@ public final class TextureTransparencyRenderer {
         int read = glGetInteger(GL_READ_FRAMEBUFFER_BINDING), draw = glGetInteger(GL_DRAW_FRAMEBUFFER_BINDING);
         int oldProgram = glGetInteger(GL_CURRENT_PROGRAM), oldVao = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         int active = glGetInteger(GL_ACTIVE_TEXTURE), depthFunc = glGetInteger(GL_DEPTH_FUNC);
+        float offsetFactor = glGetFloat(GL_POLYGON_OFFSET_FACTOR), offsetUnits = glGetFloat(GL_POLYGON_OFFSET_UNITS);
         int cullMode = glGetInteger(GL_CULL_FACE_MODE);
         boolean depthTest = glIsEnabled(GL_DEPTH_TEST), depthWrite = glGetBoolean(GL_DEPTH_WRITEMASK);
         boolean cull = glIsEnabled(GL_CULL_FACE), scissor = glIsEnabled(GL_SCISSOR_TEST), offset = glIsEnabled(GL_POLYGON_OFFSET_FILL);
@@ -111,7 +112,7 @@ public final class TextureTransparencyRenderer {
             boolean same = lastView.equals(view) && lastProjection.equals(projection);
             boolean reuse = buffer == lastBuffer && layout == lastLayout && alpha == lastAlpha && near == lastNear
                 && now-lastResolve < (same ? 100_000_000L : 8_000_000L);
-            glDisable(GL_SCISSOR_TEST); glDisable(GL_POLYGON_OFFSET_FILL);
+            glDisable(GL_SCISSOR_TEST); glEnable(GL_POLYGON_OFFSET_FILL); glPolygonOffset(-1.0F,-2.0F);
             if (!reuse) {
                 // Copy world depth, then opaque preview faces add their own depth.
                 glBindFramebuffer(GL_READ_FRAMEBUFFER, read); glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
@@ -146,6 +147,7 @@ public final class TextureTransparencyRenderer {
                 lastView.set(view); lastProjection.set(projection); lastResolve=now;
             }
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER,draw); glViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
+            glDisable(GL_POLYGON_OFFSET_FILL);
             glDisable(GL_DEPTH_TEST); glDepthMask(false); glDisable(GL_CULL_FACE);
             glEnablei(GL_BLEND,0); glBlendEquationi(0,GL_FUNC_ADD);
             glBlendFuncSeparatei(0,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_ONE,GL_ONE_MINUS_SRC_ALPHA);
@@ -162,6 +164,7 @@ public final class TextureTransparencyRenderer {
             glViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
             glUseProgram(oldProgram); glBindVertexArray(oldVao);
             for(int i=0;i<3;i++){glActiveTexture(GL_TEXTURE0+i);glBindTexture(GL_TEXTURE_2D,textures[i]);} glActiveTexture(active);
+            glPolygonOffset(offsetFactor,offsetUnits);
             glDepthFunc(depthFunc); glDepthMask(depthWrite); glCullFace(cullMode);
             enable(GL_DEPTH_TEST,depthTest); enable(GL_CULL_FACE,cull); enable(GL_SCISSOR_TEST,scissor); enable(GL_POLYGON_OFFSET_FILL,offset);
             for(int i=0;i<2;i++){int[] b=blends[i];glBlendFuncSeparatei(i,b[0],b[1],b[2],b[3]);glBlendEquationSeparatei(i,b[4],b[5]);if(blending[i])glEnablei(GL_BLEND,i);else glDisablei(GL_BLEND,i);}

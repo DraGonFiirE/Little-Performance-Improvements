@@ -215,6 +215,8 @@ public final class VeilInteriorPreviewRenderer {
                   }
 
                   surfaceShader.bind();
+                  GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
+                  GL11.glPolygonOffset(-1.0F, -2.0F);
 
                   try {
                      if (!hardwareTextureDepth) {
@@ -237,12 +239,12 @@ public final class VeilInteriorPreviewRenderer {
 
                            GL11.glCullFace(1028);
                            GL11.glEnable(32823);
-                           GL11.glPolygonOffset(1.0F, 1.0F);
+                           GL11.glPolygonOffset(-0.5F, -1.0F);
                            interiorVertexBuffer.bind();
                            interiorVertexBuffer.draw();
                         } else {
                            GL11.glDisable(2884);
-                           GL11.glDisable(32823);
+                           GL11.glEnable(32823);
                            GL11.glDepthFunc(513);
                            vertexBuffer.draw();
 
@@ -263,12 +265,12 @@ public final class VeilInteriorPreviewRenderer {
 
                            GL11.glCullFace(1028);
                            GL11.glEnable(32823);
-                           GL11.glPolygonOffset(1.0F, 1.0F);
+                           GL11.glPolygonOffset(-0.5F, -1.0F);
                            interiorVertexBuffer.bind();
                            drawTexturedBuffer(interiorVertexBuffer, drawLayout, false);
                         } else {
                            GL11.glDisable(2884);
-                           GL11.glDisable(32823);
+                           GL11.glEnable(32823);
                            GL11.glDepthFunc(513);
                            drawTexturedBuffer(vertexBuffer, drawLayout, true);
 
