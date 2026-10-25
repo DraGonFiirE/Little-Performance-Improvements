@@ -278,6 +278,7 @@ public final class VeilInteriorPreviewRenderer {
 
                      }
 
+                     if (!textured) BlueprintSurfaceMarkers.draw(surfaceShader, alpha);
                   } finally {
                      VertexBuffer.unbind();
                      if (polygonOffsetFill) {
@@ -304,6 +305,7 @@ public final class VeilInteriorPreviewRenderer {
                   }
                }
 
+               if (!textured) BlueprintSurfaceMarkers.draw(null, alpha);
                GL30.glBindFramebuffer(36009, previousDrawFramebuffer);
                GL30.glBindFramebuffer(36008, previousReadFramebuffer);
                GL11.glViewport(0, 0, targetWidth, targetHeight);

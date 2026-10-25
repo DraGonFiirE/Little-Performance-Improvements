@@ -18,6 +18,9 @@ import dev.DraGonFiirE.littleperformanceimprovements.client.render.BlueprintPrev
 import dev.DraGonFiirE.littleperformanceimprovements.client.render.BlueprintSurfaceFaceFilter;
 import dev.DraGonFiirE.littleperformanceimprovements.client.render.ChiselTransformTextures;
 import dev.DraGonFiirE.littleperformanceimprovements.client.render.DefaultPreviewColor;
+import dev.DraGonFiirE.littleperformanceimprovements.client.render.BlueprintStructureMarkers;
+import dev.DraGonFiirE.littleperformanceimprovements.client.render.BlueprintMarkerTint;
+import dev.DraGonFiirE.littleperformanceimprovements.client.render.BlueprintSurfaceMarkers;
 import dev.DraGonFiirE.littleperformanceimprovements.client.render.FullDetailPreviewCompaction;
 import dev.DraGonFiirE.littleperformanceimprovements.client.render.OutlineDepthVertexSharing;
 import dev.DraGonFiirE.littleperformanceimprovements.client.render.OutlineLineDepthTexture;
@@ -252,6 +255,18 @@ public abstract class LittleToolPlacerPerformanceMixin extends LittleTool implem
       at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/BufferUploader;drawWithShader(Lcom/mojang/blaze3d/vertex/MeshData;)V", ordinal = 0)
    )
    private void littleperformanceimprovements$drawLargePreviewFromPersistentBuffer(MeshData mesh) {
+      BlueprintSurfaceMarkers.begin(mesh, littleperformanceimprovements$previewRenderer());
+      try {
+         littleperformanceimprovements$drawBlueprintGeometry(mesh);
+         if (!BlueprintSurfaceMarkers.wasDrawn())
+            BlueprintStructureMarkers.draw(mesh, littleperformanceimprovements$previewRenderer());
+      } finally {
+         BlueprintSurfaceMarkers.end();
+      }
+   }
+
+   @Unique
+   private void littleperformanceimprovements$drawBlueprintGeometry(MeshData mesh) {
       if (littleperformanceimprovements$previewRenderer() == PreviewRendererMode.Default) {
          if (this.littleperformanceimprovements$largePreviewVertexBuffer != null && this.littleperformanceimprovements$uploadedLargePreviewMesh == mesh) {
             this.littleperformanceimprovements$largePreviewVertexBuffer.bind();
@@ -278,7 +293,7 @@ public abstract class LittleToolPlacerPerformanceMixin extends LittleTool implem
          }
 
          try {
-            DefaultPreviewColor.draw(
+            if (!BlueprintMarkerTint.draw(mesh, this.littleperformanceimprovements$largePreviewVertexBuffer)) DefaultPreviewColor.draw(
                this.littleperformanceimprovements$largePreviewVertexBuffer,
                RenderSystem.getModelViewMatrix(),
                RenderSystem.getProjectionMatrix(),
@@ -497,8 +512,7 @@ public abstract class LittleToolPlacerPerformanceMixin extends LittleTool implem
       at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/BufferUploader;drawWithShader(Lcom/mojang/blaze3d/vertex/MeshData;)V", ordinal = 1)
    )
    private void littleperformanceimprovements$hideInteriorStructurePositioningOverlay(MeshData mesh) {
-      if (littleperformanceimprovements$previewRenderer() != PreviewRendererMode.Outline
-         && littleperformanceimprovements$previewRenderer() != PreviewRendererMode.Default) {
+      if (littleperformanceimprovements$previewRenderer() != PreviewRendererMode.Default) {
          mesh.close();
       } else {
          BufferUploader.drawWithShader(mesh);
@@ -510,11 +524,7 @@ public abstract class LittleToolPlacerPerformanceMixin extends LittleTool implem
       at = @At(value = "INVOKE", target = "Lteam/creative/littletiles/common/block/little/tile/group/LittleGroup;hasStructure()Z")
    )
    private boolean littleperformanceimprovements$skipHiddenFilledPositioningGeometry(LittleGroup group) {
-      return (
-            littleperformanceimprovements$previewRenderer() == PreviewRendererMode.Outline
-               || littleperformanceimprovements$previewRenderer() == PreviewRendererMode.Default
-         )
-         && group.hasStructure();
+      return littleperformanceimprovements$previewRenderer() == PreviewRendererMode.Default && group.hasStructure();
    }
 
    @Inject(method = "renderInternal", at = @At("HEAD"))
@@ -772,11 +782,32 @@ public abstract class LittleToolPlacerPerformanceMixin extends LittleTool implem
       return BlueprintPerformance.usesLowResolutionPreview(stack) ? BlueprintPreviewMesh.create(stack) : placer.get(stack, lowResolution);
    }
 
+   @Unique
+   private LittleGroup littleperformanceimprovements$fallbackMarkerGroup;
+
+   @Inject(method = "getMeshData", at = @At("HEAD"))
+   private void littleperformanceimprovements$resetFallbackMarkers(PreviewRenderer renderer, boolean lines, CallbackInfoReturnable<MeshData> callback) {
+      this.littleperformanceimprovements$fallbackMarkerGroup = null;
+   }
+
+   @Redirect(method = "getMeshData", at = @At(value = "INVOKE", target = "Lteam/creative/littletiles/common/block/little/tile/group/LittleGroup;getPlaceBoxes(Lteam/creative/littletiles/common/math/vec/LittleVec;)Ljava/util/List;"))
+   private List<RenderBox> littleperformanceimprovements$splitFallbackMarkers(LittleGroup group, LittleVec offset) {
+      this.littleperformanceimprovements$fallbackMarkerGroup = group;
+      return BlueprintStructureMarkers.geometry(group, offset);
+   }
+
+   @Inject(method = "getMeshData", at = @At("RETURN"))
+   private void littleperformanceimprovements$associateFallbackMarkers(PreviewRenderer renderer, boolean lines, CallbackInfoReturnable<MeshData> callback) {
+      if (this.littleperformanceimprovements$fallbackMarkerGroup != null)
+         BlueprintStructureMarkers.register(callback.getReturnValue(), this.littleperformanceimprovements$fallbackMarkerGroup, LittleVec.ZERO);
+   }
+
    @Inject(method = "lambda$buildCache$1", at = @At("RETURN"))
    private void littleperformanceimprovements$associateGeneratedInteriorMesh(CallbackInfoReturnable<LittleGroupResult> callback) {
       LittleGroupResult result = callback.getReturnValue();
       if (result != null) {
          MeshData mesh = result.data();
+         BlueprintStructureMarkers.register(mesh, result.group(), LittleVec.ZERO);
          if (this.builtLines) {
             this.littleperformanceimprovements$generatedOutlineDepthForMesh = mesh;
          } else {
@@ -805,12 +836,12 @@ public abstract class LittleToolPlacerPerformanceMixin extends LittleTool implem
       PreviewFanTriangulation.workerMeshActive(false);
       PreviewRendererMode mode = littleperformanceimprovements$previewRenderer();
       if (mode == PreviewRendererMode.Default) {
-         return group.getPlaceBoxes(offset);
+         return BlueprintStructureMarkers.geometry(group, offset);
       }
 
       List<RenderBox> boxes = mode == PreviewRendererMode.Texture
          ? littleperformanceimprovements$materialPlaceBoxes(group, offset)
-         : group.getPlaceBoxes(offset);
+         : BlueprintStructureMarkers.geometry(group, offset);
 
       if (this.builtLines) {
          LittleToolPlacerPerformanceMixin.GeneratedInteriorMesh previousOutlineDepth = this.littleperformanceimprovements$generatedOutlineDepthMesh;
@@ -828,7 +859,7 @@ public abstract class LittleToolPlacerPerformanceMixin extends LittleTool implem
             Logger var22 = LittlePerformanceImprovements.LOGGER;
             HeldPreviewBuild.check();
             var22.error("Failed to derive Outline from exact Surface geometry; using native box edges", throwable);
-            boxes = group.getPlaceBoxes(offset);
+            boxes = BlueprintStructureMarkers.geometry(group, offset);
             filtered = SimpleBlueprintOutline.retainAirTouching(boxes, group.getGrid().count);
          }
 
@@ -841,7 +872,7 @@ public abstract class LittleToolPlacerPerformanceMixin extends LittleTool implem
                Logger var10000 = LittlePerformanceImprovements.LOGGER;
                HeldPreviewBuild.check();
                var10000.error("Failed to filter filled blueprint faces; using native placement geometry", throwable);
-               boxes = group.getPlaceBoxes(offset);
+               boxes = BlueprintStructureMarkers.geometry(group, offset);
             }
 
          }
